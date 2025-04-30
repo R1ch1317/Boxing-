@@ -1,0 +1,156 @@
+import pygame
+import random
+import sys
+
+# Initialize Pygame
+pygame.init()
+
+# Screen setup
+WIDTH, HEIGHT = 800, 400
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Richie Boxing")
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (200, 0, 0)
+BLUE = (0, 0, 200)
+GREEN = (0, 255, 0)
+DARK_GREEN = (0, 150, 0)
+
+# Fonts
+font = pygame.font.SysFont(None, 40)
+
+# Boxer class
+class Boxer:
+    def __init__(self, name, x, color):
+        self.name = name
+        self.health = 100
+        self.base_x = x
+        self.rect = pygame.Rect(x, 200, 100, 100)
+        self.color = color
+
+    def draw(self):
+        pygame.draw.rect(screen, self.color, self.rect)
+        self.draw_health_bar()
+        name_text = font.render(self.name, True, WHITE)
+        screen.blit(name_text, (self.rect.x, self.rect.y - 60))
+
+    def draw_health_bar(self):
+        bar_width = 100
+        health_ratio = max(self.health, 0) / 100
+        current_bar_width = int(bar_width * health_ratio)
+        bar_x = self.rect.x
+        bar_y = self.rect.y - 30
+
+        pygame.draw.rect(screen, DARK_GREEN, (bar_x, bar_y, bar_width, 10))
+        pygame.draw.rect(screen, GREEN, (bar_x, bar_y, current_bar_width, 10))
+
+    def punch(self, opponent):
+        damage = random.randint(5, 20)
+        opponent.health -= damage
+        return damage
+
+    def animate_punch(self, forward=True):
+        step = 10 if forward else -10
+        for _ in range(5):
+            self.rect.x += step
+            draw_scene(player, enemy, message)
+            pygame.time.delay(30)
+
+    def reset_position(self):
+        self.rect.x = self.base_x
+
+# Splash screen
+def show_splash_screen():
+    title_font = pygame.font.SysFont(None, 80)
+    prompt_font = pygame.font.SysFont(None, 40)
+
+    waiting = True
+    while waiting:
+        screen.fill(BLACK)
+
+        title_text = title_font.render("Richie Boxing", True, WHITE)
+        prompt_text = prompt_font.render("Press SPACE to Start", True, WHITE)
+
+        screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 3))
+        screen.blit(prompt_text, (WIDTH // 2 - prompt_text.get_width() // 2, HEIGHT // 2))
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                waiting = False
+
+# Draw scene
+def draw_scene(player, enemy, message=""):
+    screen.fill(BLACK)
+
+    title_font = pygame.font.SysFont(None, 60)
+    title_text = title_font.render("Richie Boxing", True, WHITE)
+    screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 10))
+
+    msg_font = pygame.font.SysFont(None, 36)
+    msg_text = msg_font.render(message, True, WHITE)
+    screen.blit(msg_text, (WIDTH // 2 - msg_text.get_width() // 2, 70))
+
+    player.draw()
+    enemy.draw()
+    pygame.display.flip()
+
+# Main game loop
+def game_loop():
+    global player, enemy, message
+    player = Boxer("You", 150, BLUE)
+    enemy = Boxer("Iron Joe", 550, RED)
+    clock = pygame.time.Clock()
+    message = ""
+    turn = "player"
+    running = True
+
+    while running:
+        draw_scene(player, enemy, message)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            elif event.type == pygame.KEYDOWN and turn == "player":
+                if event.key == pygame.K_SPACE:
+                    player.animate_punch(True)
+                    dmg = player.punch(enemy)
+                    player.animate_punch(False)
+                    player.reset_position()
+                    message = f"You punched Iron Joe for {dmg} damage!"
+                    turn = "enemy"
+
+        if turn == "enemy" and not enemy.health <= 0:
+            pygame.time.delay(1000)
+            enemy.animate_punch(True)
+            dmg = enemy.punch(player)
+            enemy.animate_punch(False)
+            enemy.reset_position()
+            message = f"Iron Joe punched you for {dmg} damage!"
+            turn = "player"
+
+        if player.health <= 0:
+            draw_scene(player, enemy, "You got knocked out! Game Over.")
+            pygame.time.delay(3000)
+            running = False
+
+        if enemy.health <= 0:
+            draw_scene(player, enemy, "You knocked out Iron Joe! You win!")
+            pygame.time.delay(3000)
+            running = False
+
+        clock.tick(60)
+
+    pygame.quit()
+    sys.exit()
+
+# Start game
+show_splash_screen()
+game_loop()
